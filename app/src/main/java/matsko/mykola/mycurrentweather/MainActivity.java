@@ -73,7 +73,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
     private SharedPreferences sPref;
     private boolean isEnabledInListCity = true;
     private ArrayAdapterSearchView mSearchView;
-    private MenuItem mSearchItem;
+    private MenuItem mSearchMenuItem;
 
     private SearchView.OnQueryTextListener mOnQueryTextListener = new SearchView.OnQueryTextListener() {
         @Override
@@ -89,7 +89,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
             }
 
             PendingResult<AutocompletePredictionBuffer> result =
-                    Places.GeoDataApi.getAutocompletePredictions(mGoogleApiClient, newText, null, mAutocompleteFilter);
+                    Places.GeoDataApi.getAutocompletePredictions(mGoogleApiClient, newText, null, null);
 
             result.setResultCallback(mAutocompleteResultCallback);
             return true;
@@ -127,10 +127,10 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
                 isFirstTime = false;
                 goWeather(latLng.latitude, latLng.longitude);
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
-                    mSearchItem.collapseActionView();
+                    mSearchMenuItem.collapseActionView();
                 }
-
             }
+            placeBuffer.release();
         }
     };
 
@@ -138,7 +138,6 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-
         mProgressBar = (ProgressBar) findViewById(R.id.main_progress_bar);
         mFrameLayout = findViewById(R.id.single_fragment);
         mToolbar = (Toolbar) findViewById(R.id.toolbar);
@@ -164,11 +163,11 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
     public boolean onCreateOptionsMenu(final Menu menu) {
 
         getMenuInflater().inflate(R.menu.menu_main, menu);
-        mSearchItem = menu.findItem(R.id.action_search);
-        mSearchView = (ArrayAdapterSearchView) MenuItemCompat.getActionView(mSearchItem);
+        mSearchMenuItem = menu.findItem(R.id.action_search);
+        mSearchView = (ArrayAdapterSearchView) MenuItemCompat.getActionView(mSearchMenuItem);
         mSearchView.setCustomColor(new ColorDrawable(getResources().getColor(R.color.backgroundAutocomlete)));
         List<Integer> filters = new ArrayList<Integer>();
-        filters.add(Place.TYPE_GEOCODE);
+        filters.add(Place.TYPE_LOCALITY);
         mAutocompleteFilter = AutocompleteFilter.create(filters);
 
         mSearchView.setOnQueryTextListener(mOnQueryTextListener);
@@ -191,10 +190,11 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
 
     protected synchronized void buildGoogleApiClient() {
         mGoogleApiClient = new Builder(this)
+                .addApi(Places.GEO_DATA_API)
+                .addApi(Places.PLACE_DETECTION_API)
                 .addConnectionCallbacks(this)
                 .addOnConnectionFailedListener(this)
                 .addApi(LocationServices.API)
-                .addApi(Places.GEO_DATA_API)
                 .build();
     }
 

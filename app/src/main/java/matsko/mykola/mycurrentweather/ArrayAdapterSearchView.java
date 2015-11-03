@@ -1,6 +1,7 @@
 package matsko.mykola.mycurrentweather;
 
 import android.content.Context;
+import android.graphics.Color;
 import android.graphics.drawable.ColorDrawable;
 import android.support.v4.widget.CursorAdapter;
 import android.support.v7.widget.SearchView;
@@ -27,8 +28,10 @@ public class ArrayAdapterSearchView extends SearchView {
 
     public void initialize() {
         mSearchAutoComplete = (SearchAutoComplete) findViewById(android.support.v7.appcompat.R.id.search_src_text);
-        this.setAdapter(null);
-        this.setOnItemClickListener(null);
+        mSearchAutoComplete.setTextColor(Color.WHITE);
+        mSearchAutoComplete.setHintTextColor(Color.WHITE);
+//        this.setAdapter(null);
+//        this.setOnItemClickListener(null);
     }
 
     @Override
@@ -42,6 +45,7 @@ public class ArrayAdapterSearchView extends SearchView {
 
     public void setAdapter(ArrayAdapter<?> adapter) {
         mSearchAutoComplete.setAdapter(adapter);
+        mSearchAutoComplete.setDropDownHeight(400);
     }
 
     public void setText(String text) {
