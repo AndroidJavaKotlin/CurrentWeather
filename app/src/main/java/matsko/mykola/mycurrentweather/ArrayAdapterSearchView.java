@@ -9,7 +9,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 
 /**
- * Created by Asme on 28.10.2015.
+ * Created by akrup on 28.10.2015.
  */
 public class ArrayAdapterSearchView extends SearchView {
 
