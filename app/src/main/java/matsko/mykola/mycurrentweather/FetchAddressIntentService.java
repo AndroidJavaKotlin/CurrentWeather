@@ -18,7 +18,7 @@ import java.util.Locale;
  */
 public class FetchAddressIntentService extends IntentService {
 
-    private static final String TAG = "FetchAddressIS";
+    private static final String TAG = "qwerty";
 
     private ResultReceiver mReceiver;
     private double mLatitude;
@@ -69,6 +69,7 @@ public class FetchAddressIntentService extends IntentService {
             }
             deliverResultToReceiver(Constants.FAILURE_RESULT, errorMessage);
         } else {
+
             Address address = addresses.get(0);
             ArrayList<String> addressFragments = new ArrayList<>();
                 addressFragments.add(address.getLocality());

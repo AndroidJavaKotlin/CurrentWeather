@@ -4,7 +4,6 @@ import android.annotation.SuppressLint;
 import android.app.Dialog;
 import android.content.Intent;
 import android.content.IntentSender;
-import android.content.SharedPreferences;
 import android.content.res.Configuration;
 import android.graphics.drawable.ColorDrawable;
 import android.location.Location;
@@ -15,14 +14,14 @@ import android.os.ResultReceiver;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.view.MenuItemCompat;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.SearchView;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
+import android.widget.ImageButton;
 import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -34,7 +33,7 @@ import com.google.android.gms.common.api.PendingResult;
 import com.google.android.gms.common.api.ResultCallback;
 import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.location.places.AutocompleteFilter;
-import com.google.android.gms.location.places.AutocompletePredictionBuffer;
+import com.google.android.gms.location.places.AutocompletePrediction;
 import com.google.android.gms.location.places.Place;
 import com.google.android.gms.location.places.PlaceBuffer;
 import com.google.android.gms.location.places.Places;
@@ -57,82 +56,22 @@ import static com.google.android.gms.common.api.GoogleApiClient.OnConnectionFail
 
 public class MainActivity extends AppCompatActivity implements ConnectionCallbacks, OnConnectionFailedListener {
 
+    private static final String TAG = "tag";
+    private static final String CITI_KEY = "CITI_KEY";
     protected String mAddressOutput = "";
     protected boolean mLoadingRequested;
     private GoogleApiClient mGoogleApiClient;
     private Location mLastLocation;
-    private double mLatitude;
-    private double mLongitude;
     private AddressResultReceiver mResultReceiver;
     private ProgressBar mProgressBar;
     private View mFrameLayout;
     private Toolbar mToolbar;
     private TextView mTitleTextView;
-    private AutocompleteFilter mAutocompleteFilter;
     private boolean isFirstTime = true;
-    private SharedPreferences sPref;
-    private boolean isEnabledInListCity = true;
     private ArrayAdapterSearchView mSearchView;
     private MenuItem mSearchMenuItem;
-
-    private SearchView.OnQueryTextListener mOnQueryTextListener = new SearchView.OnQueryTextListener() {
-        @Override
-        public boolean onQueryTextSubmit(String query) {
-            return false;
-        }
-
-        @Override
-        public boolean onQueryTextChange(String newText) {
-            buildGoogleApiClient();
-            if (mGoogleApiClient != null) {
-                mGoogleApiClient.connect();
-            }
-
-            PendingResult<AutocompletePredictionBuffer> result =
-                    Places.GeoDataApi.getAutocompletePredictions(mGoogleApiClient, newText, null, null);
-
-            result.setResultCallback(mAutocompleteResultCallback);
-            return true;
-        }
-    };
-
-    private ResultCallback<AutocompletePredictionBuffer> mAutocompleteResultCallback = new ResultCallback<AutocompletePredictionBuffer>() {
-        @Override
-        public void onResult(final AutocompletePredictionBuffer autocompletePredictions) {
-            if (autocompletePredictions.getStatus().isSuccess()) {
-                String[] citiesArray = new String[autocompletePredictions.getCount()];// ????
-                for (int i = 0; i < autocompletePredictions.getCount(); i++) {
-                    citiesArray[i] = autocompletePredictions.get(i).getDescription();
-                }
-                ArrayAdapter<String> adapter = new ArrayAdapter<>(MainActivity.this, android.R.layout.simple_list_item_1, citiesArray);
-                mSearchView.setAdapter(adapter);
-                mSearchView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-                    @Override
-                    public void onItemClick(AdapterView<?> parent, View view, final int position, long id) {
-
-                        Places.GeoDataApi.getPlaceById(mGoogleApiClient, autocompletePredictions.get(position).getPlaceId())
-                                .setResultCallback(mPlaceResultCallback);
-                    }
-                });
-            }
-
-        }
-    };
-
-    private ResultCallback<PlaceBuffer> mPlaceResultCallback = new ResultCallback<PlaceBuffer>() {
-        @Override
-        public void onResult(PlaceBuffer placeBuffer) {
-            if (placeBuffer.getStatus().isSuccess()) {
-                LatLng latLng = placeBuffer.get(0).getLatLng();
-                isFirstTime = false;
-                goWeather(latLng.latitude, latLng.longitude);
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
-                    mSearchMenuItem.collapseActionView();
-                }
-            }
-            placeBuffer.release();
-        }
-    };
+    private PlaceAutocompleteAdapter mAutocompleteAdapter;
+    private ImageButton imageButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -140,22 +79,43 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
         setContentView(R.layout.activity_main);
         mProgressBar = (ProgressBar) findViewById(R.id.main_progress_bar);
         mFrameLayout = findViewById(R.id.single_fragment);
+        imageButton = (ImageButton) findViewById(R.id.my_position);
+        imageButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mLoadingRequested = true;
+                connectedWeather();
+                updateUIWidgets();
+                Log.d("qwerty", "onConnected OK");
+                mResultReceiver = new AddressResultReceiver(new Handler());
+                goWeather(mLastLocation.getLatitude(), mLastLocation.getLongitude());
+            }
+        });
         mToolbar = (Toolbar) findViewById(R.id.toolbar);
         mTitleTextView = (TextView) mToolbar.findViewById(R.id.toolbar_title);
         setSupportActionBar(mToolbar);
 
-
         if (savedInstanceState == null) {
+            isFirstTime = true;
             mLoadingRequested = true;
             mResultReceiver = new AddressResultReceiver(new Handler());
             updateUIWidgets();
             buildGoogleApiClient();
             ForecastApi.create("80cafdc845d979b3e365db8bfd0c73b9");
         } else {
+            buildGoogleApiClient();
             mLoadingRequested = true;
+            isFirstTime = false;
             updateUIWidgets();
             showData();
+            displayTitleBar(WeatherData.getsInstance().getCityTitle());
         }
+
+        List<Integer> filters = new ArrayList<Integer>();
+        filters.add(Place.TYPE_GEOCODE);
+        AutocompleteFilter filter = AutocompleteFilter.create(filters);
+        mAutocompleteAdapter = new PlaceAutocompleteAdapter(this, mGoogleApiClient, null, filter);
+
 
     }
 
@@ -166,21 +126,93 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
         mSearchMenuItem = menu.findItem(R.id.action_search);
         mSearchView = (ArrayAdapterSearchView) MenuItemCompat.getActionView(mSearchMenuItem);
         mSearchView.setCustomColor(new ColorDrawable(getResources().getColor(R.color.backgroundAutocomlete)));
-        List<Integer> filters = new ArrayList<Integer>();
-        filters.add(Place.TYPE_LOCALITY);
-        mAutocompleteFilter = AutocompleteFilter.create(filters);
-
-        mSearchView.setOnQueryTextListener(mOnQueryTextListener);
-
-
+        mSearchView.setAdapter(mAutocompleteAdapter);
+        mSearchView.setOnItemClickListener(mOnItemClickListener);
         return super.onCreateOptionsMenu(menu);
     }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
+        Log.d("qwerty", "onStart()");
+        if (mGoogleApiClient != null) {
+            mGoogleApiClient.connect();
+            Log.d("qwerty", "mGoogleApiClient.connect();");
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        super.onStop();
+        Log.d("qwerty", "onStop()");
+        if (mGoogleApiClient != null) {
+            mGoogleApiClient.disconnect();
+            Log.d("qwerty", "mGoogleApiClient.disconnect()");
+        }
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putString(CITI_KEY, WeatherData.getsInstance().getCityTitle());
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        displayTitleBar(savedInstanceState.getString(CITI_KEY));
+    }
+
+    private ResultCallback<PlaceBuffer> mUpdatePlaceDetailsCallback = new ResultCallback<PlaceBuffer>() {
+        @Override
+        public void onResult(PlaceBuffer places) {
+            if (!places.getStatus().isSuccess()) {
+                // Request did not complete successfully
+                Log.e(TAG, "Place query did not complete. Error: " + places.getStatus().toString());
+                places.release();
+                return;
+            }
+            // Get the Place object from the buffer.
+            LatLng latLng = places.get(0).getLatLng();
+            isFirstTime = false;
+            mResultReceiver = new AddressResultReceiver(new Handler());
+            goWeather(latLng.latitude, latLng.longitude);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.ICE_CREAM_SANDWICH) {
+                mSearchMenuItem.collapseActionView();
+            }
+
+//            // Display the third party attributions if set.
+//            final CharSequence thirdPartyAttribution = places.getAttributions();
+//            if (thirdPartyAttribution == null) {
+//                mPlaceDetailsAttribution.setVisibility(View.GONE);
+//            } else {
+//                mPlaceDetailsAttribution.setVisibility(View.VISIBLE);
+//                mPlaceDetailsAttribution.setText(Html.fromHtml(thirdPartyAttribution.toString()));
+//            }
+            places.release();
+        }
+    };
+    private AdapterView.OnItemClickListener mOnItemClickListener = new AdapterView.OnItemClickListener() {
+        @Override
+        public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+            final AutocompletePrediction item = mAutocompleteAdapter.getItem(position);
+            final String placeId = item.getPlaceId();
+
+            PendingResult<PlaceBuffer> placeResult = Places.GeoDataApi
+                    .getPlaceById(mGoogleApiClient, placeId);
+            placeResult.setResultCallback(mUpdatePlaceDetailsCallback);
+
+            Log.i(TAG, "Called getPlaceById to get Place details for " + placeId);
+        }
+    };
+
+
+
 
     private void updateUIWidgets() {
         if (mLoadingRequested) {
             mProgressBar.setVisibility(View.VISIBLE);
             mFrameLayout.setVisibility(View.GONE);
-
         } else {
             mProgressBar.setVisibility(View.GONE);
             mFrameLayout.setVisibility(View.VISIBLE);
@@ -189,7 +221,9 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
     }
 
     protected synchronized void buildGoogleApiClient() {
+        Log.d("qwerty", "buildGoogleApiClient()");
         mGoogleApiClient = new Builder(this)
+                .enableAutoManage(this, 0 /* clientId */, this)
                 .addApi(Places.GEO_DATA_API)
                 .addApi(Places.PLACE_DETECTION_API)
                 .addConnectionCallbacks(this)
@@ -198,48 +232,37 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
                 .build();
     }
 
-    @Override
-    protected void onStart() {
-        super.onStart();
-        if (mGoogleApiClient != null) {
-            mGoogleApiClient.connect();
-        }
-    }
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        if (mGoogleApiClient != null) {
-            mGoogleApiClient.disconnect();
-            Log.d("qwerty", "onStop OK");
-        }
-    }
 
     @Override
     public void onConnected(Bundle bundle) {
-        Log.d("qwerty", "onConnected OK");
-        mLastLocation = LocationServices.FusedLocationApi.getLastLocation(
-                mGoogleApiClient);
 
-        if (mLastLocation == null) {
-            Toast.makeText(this, "Turn on location", Toast.LENGTH_LONG).show();
-            return;
-        }
-
-        if (isFirstTime) {
-            goWeather(mLastLocation.getLatitude(), mLastLocation.getLongitude());
-        }
+        connectedWeather();
 
 //        mLatitude = 49.8268070;
 //        mLongitude = 23.9592920;
+
+        if (isFirstTime) {
+            Log.d("qwerty", "onConnected OK");
+            if (mLastLocation == null) {
+                Toast.makeText(this, "Turn on location", Toast.LENGTH_LONG).show();
+            } else {
+                goWeather(mLastLocation.getLatitude(), mLastLocation.getLongitude());
+            }
+        }
+
+    }
+
+    private void connectedWeather() {
+        mLastLocation = LocationServices.FusedLocationApi.getLastLocation(
+                mGoogleApiClient);
 
 
     }
 
     private void goWeather(double latitude, double longitude) {
-        if (!Double.isNaN(latitude) && !Double.isNaN(longitude)) {
-            startIntentService(latitude, longitude);
-        }
+
+        startIntentService(latitude, longitude);
+
 
         RequestBuilder weather = new RequestBuilder();
 
@@ -248,12 +271,12 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
         request.setLng(String.valueOf(longitude));
         request.setUnits(Request.Units.SI);
         request.setLanguage(Request.Language.ENGLISH);
-
+        Log.d("qwerty", "goWeather");
         weather.getWeather(request, new Callback<WeatherResponse>() {
             @Override
             public void success(WeatherResponse weatherResponse, Response response) {
                 //1. Get our weather
-
+                Log.d("qwerty", "success");
                 WeatherData.getsInstance().setCurrentTemperature((int) weatherResponse.getCurrently().getTemperature());
 
                 WeatherData.getsInstance().setSunrise(Long.valueOf(weatherResponse.getDaily().getData().get(0).getSunriseTime()) * 1000);
@@ -276,8 +299,6 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
 
                 Log.d("qwerty", "success callback OK");
                 showData();
-
-
             }
 
             @Override
@@ -327,7 +348,6 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
     }
 
     private void showData() {
-        displayTitleBar(WeatherData.getsInstance().getCityTitle());
         if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
             getSupportFragmentManager().beginTransaction().replace(R.id.current_fragment, new CurrentWeatherFragment()).commit();
         }
@@ -354,6 +374,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
         if (getSupportActionBar() != null) {
             getSupportActionBar().setTitle(null);
             mTitleTextView.setText(name);
+            mTitleTextView.setGravity(Gravity.CENTER);
         }
     }
 
@@ -401,10 +422,12 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
             mAddressOutput = resultData.getString(Constants.RESULT_DATA_KEY);
 
             if (resultCode == Constants.SUCCESS_RESULT) {
+                Log.d("qwerty", "onReceiveResult() OK");
                 WeatherData.getsInstance().setCityTitle(mAddressOutput);
-                displayTitleBar(mAddressOutput);
+                displayTitleBar(WeatherData.getsInstance().getCityTitle());
             } else if (resultCode == Constants.FAILURE_RESULT) {
-                displayTitleBar("");
+                Log.d("qwerty", "onReceiveResult() fail");
+                displayTitleBar("ERROR");
                 Toast.makeText(MainActivity.this, mAddressOutput, Toast.LENGTH_LONG).show();
             }
         }

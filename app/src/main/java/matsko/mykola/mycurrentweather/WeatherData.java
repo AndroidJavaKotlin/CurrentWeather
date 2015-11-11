@@ -16,7 +16,7 @@ public class WeatherData {
     private long sunset;
     private String currentIcon;
     private String currentDescription;
-    private String CityTitle;
+    private String cityTitle;
     private List<String> cities = new ArrayList<>();
 
     public List<String> getCities() {
@@ -27,14 +27,10 @@ public class WeatherData {
         this.cities.add(city);
     }
 
-
-
     List<WeatherForecast> mWeatherForecastList = new ArrayList<>();
 
     private WeatherData() {
     }
-
-
 
     public static WeatherData getsInstance() {
         return sInstance;
@@ -45,11 +41,11 @@ public class WeatherData {
     }
 
     public String getCityTitle() {
-        return CityTitle;
+        return cityTitle;
     }
 
     public void setCityTitle(String cityTitle) {
-        CityTitle = cityTitle;
+        this.cityTitle = cityTitle;
     }
 
     public void setCurrentTemperature(int currentTemperature) {

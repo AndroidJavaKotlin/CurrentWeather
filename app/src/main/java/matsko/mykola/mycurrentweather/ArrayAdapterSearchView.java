@@ -45,7 +45,6 @@ public class ArrayAdapterSearchView extends SearchView {
 
     public void setAdapter(ArrayAdapter<?> adapter) {
         mSearchAutoComplete.setAdapter(adapter);
-        mSearchAutoComplete.setDropDownHeight(400);
     }
 
     public void setText(String text) {
