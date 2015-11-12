@@ -2,10 +2,12 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     tools:context="matsko.mykola.myapplication.MainActivity">
+
     <item
         android:id="@+id/action_search"
         app:actionViewClass="matsko.mykola.mycurrentweather.ArrayAdapterSearchView"
         app:showAsAction="ifRoom|collapseActionView"
         android:icon="@drawable/search"
+        android:orderInCategory="100"
         android:title="@string/action_search" />
 </menu>

@@ -83,9 +83,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
         imageButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                mLoadingRequested = true;
                 connectedWeather();
-                updateUIWidgets();
                 Log.d("qwerty", "onConnected OK");
                 mResultReceiver = new AddressResultReceiver(new Handler());
                 goWeather(mLastLocation.getLatitude(), mLastLocation.getLongitude());
