@@ -107,8 +107,8 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
             buildGoogleApiClient();
             mLoadingRequested = true;
             isFirstTime = false;
-            updateUIWidgets();
-            showData();
+//            updateUIWidgets();
+//            showData();
             displayTitleBar(WeatherData.getsInstance().getCityTitle());
         }
 
