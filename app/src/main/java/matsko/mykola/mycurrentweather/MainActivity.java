@@ -99,7 +99,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
             isFirstTime = true;
             mLoadingRequested = true;
             mResultReceiver = new AddressResultReceiver(new Handler());
-            updateUIWidgets();
+//            updateUIWidgets();
             buildGoogleApiClient();
             ForecastApi.create("80cafdc845d979b3e365db8bfd0c73b9");
         } else {
