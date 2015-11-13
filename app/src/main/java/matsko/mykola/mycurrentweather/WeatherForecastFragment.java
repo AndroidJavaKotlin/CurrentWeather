@@ -53,8 +53,8 @@ public class WeatherForecastFragment extends Fragment {
         public void onBindViewHolder(WeatherForecastViewHolder holder, int position) {
             WeatherForecast item = WeatherData.getsInstance().mWeatherForecastList.get(position);
             holder.dateTextView.setText(new DateTime(item.date * 1000).toString("EEE, d MMM", Locale.US));
-            holder.apparentTemperatureMin.setText(String.valueOf(item.apparentTemperatureMin));
-            holder.apparentTemperatureMax.setText(String.valueOf(item.apparentTemperatureMax));
+            holder.apparentTemperatureMin.setText(String.valueOf(item.apparentTemperatureMin) + "\u2103");
+            holder.apparentTemperatureMax.setText(String.valueOf(item.apparentTemperatureMax) + "\u2103");
             holder.dailyWeatherIcon.setImageResource(WeatherData.getsInstance().getIconResourceID(item.dailyIcon));
             holder.dailySummaryText.setText(item.dailySummary);
         }
