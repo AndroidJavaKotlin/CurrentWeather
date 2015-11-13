@@ -71,11 +71,10 @@
             android:id="@+id/daily_summary"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center"
             android:textColor="#000000"
             android:textSize="15sp"
             android:textStyle="bold"
-            tools:text="ABC" />
+            tools:text="Light rain starting in the afternoon and breezy starting in the evening." />
     </LinearLayout>
 
 
