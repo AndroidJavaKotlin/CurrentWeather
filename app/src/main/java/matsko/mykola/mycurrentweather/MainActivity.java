@@ -72,6 +72,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
     private MenuItem mSearchMenuItem;
     private PlaceAutocompleteAdapter mAutocompleteAdapter;
     private ImageButton imageButton;
+    private Boolean isSavedInstanceState;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -79,6 +80,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
         setContentView(R.layout.activity_main);
         mProgressBar = (ProgressBar) findViewById(R.id.main_progress_bar);
         mFrameLayout = findViewById(R.id.single_fragment);
+        isSavedInstanceState = true;
         imageButton = (ImageButton) findViewById(R.id.my_position);
         imageButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -101,6 +103,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
             buildGoogleApiClient();
             ForecastApi.create("80cafdc845d979b3e365db8bfd0c73b9");
         } else {
+            isSavedInstanceState = false;
             buildGoogleApiClient();
             mLoadingRequested = true;
             isFirstTime = false;
@@ -347,15 +350,18 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
 
     private void showData() {
         if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
+//            List<Fragment> fragments = getSupportFragmentManager().getFragments();
+//            if (fragments != null){
+//                fragments.
+//            }
             getSupportFragmentManager().beginTransaction().replace(R.id.current_fragment, new CurrentWeatherFragment()).commit();
         }
         if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE
                 && ((getResources().getConfiguration().screenLayout & Configuration.SCREENLAYOUT_SIZE_MASK) ==
                 Configuration.SCREENLAYOUT_SIZE_NORMAL)) {
-//            if(getFragmentManager().findFragmentByTag(WeatherData.FRAGMENT_TAG) != null){
-//                return;
-//            }
-            getSupportFragmentManager().beginTransaction().replace(R.id.current_fragment, new CurrentWeatherFragment()).commit();
+            if (isSavedInstanceState){
+                getSupportFragmentManager().beginTransaction().replace(R.id.current_fragment, new CurrentWeatherFragment()).commit();
+            }
         }
         if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE
                 && !((getResources().getConfiguration().screenLayout & Configuration.SCREENLAYOUT_SIZE_MASK) ==

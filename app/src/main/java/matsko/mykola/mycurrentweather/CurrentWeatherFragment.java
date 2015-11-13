@@ -43,6 +43,12 @@ public class CurrentWeatherFragment extends Fragment {
     }
 
     @Override
+    public void onActivityCreated(@Nullable Bundle savedInstanceState) {
+        super.onActivityCreated(savedInstanceState);
+        setRetainInstance(true);
+    }
+
+    @Override
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         if ((getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) ||
                 (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE
