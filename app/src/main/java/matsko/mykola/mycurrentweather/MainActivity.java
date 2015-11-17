@@ -86,6 +86,7 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
             @Override
             public void onClick(View v) {
                 connectedWeather();
+                isSavedInstanceState = true;
                 Log.d("qwerty", "onConnected OK");
                 mResultReceiver = new AddressResultReceiver(new Handler());
                 goWeather(mLastLocation.getLatitude(), mLastLocation.getLongitude());
@@ -350,10 +351,6 @@ public class MainActivity extends AppCompatActivity implements ConnectionCallbac
 
     private void showData() {
         if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_PORTRAIT) {
-//            List<Fragment> fragments = getSupportFragmentManager().getFragments();
-//            if (fragments != null){
-//                fragments.
-//            }
             getSupportFragmentManager().beginTransaction().replace(R.id.current_fragment, new CurrentWeatherFragment()).commit();
         }
         if (getResources().getConfiguration().orientation == Configuration.ORIENTATION_LANDSCAPE
