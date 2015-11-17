@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">My Current Weather</string>
+    <string name="app_name">Current Weather</string>
     <string name="no_location_data_provided">No location data provided</string>
     <string name="no_address_found">Sorry, no address found</string>
     <string name="title_activity_maps">Map</string>
